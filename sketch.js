@@ -1,14 +1,115 @@
+CanvasWidth = 400
+CanvasHeight = 400
+TimeBetweenShapeChange = 2
+LoopsUntilColorChange = 10
+
+NumColors = 3
+NumColorSteps = 10
+Alpha = 5
+
+InitialShapeSize = 75
+NumRows = 300
+
+InitialIteration = 1
+InitialVariance = 25
+
+LayeredIteration = 3
+LayeredVariance = 10
+
+MinLayers = 20
+MaxLayers = 25
+
+drawLoopCount = 0
+
 function setup() {
-    createCanvas(1000, 100);
-    [lerpColors, baseColors] = generateInterpolatedColors(1000, 3);
+    background(255)
+    createCanvas(CanvasWidth, CanvasHeight)
+    generateInterpolatedColors(NumColorSteps, NumColors)
 }
+
 
 function draw() {
-    // background(0)
-    // fill(lerpedColors[i])
-    // rect(i*20,40,20,20)
+    clear()
+    frameRate(1 / TimeBetweenShapeChange)
+    countDrawLoop()
+
+
+
+    for (yValue = -CanvasHeight * 0.2; yValue < CanvasHeight * 1.2; yValue += CanvasHeight / NumRows) {
+        xValue = random(-100, CanvasWidth + 100)
+        randomColor = random(lerpedColors)
+        randomColor.setAlpha(Alpha)
+        fill(randomColor)
+        noStroke()
+
+        initialShape = octagon(xValue, yValue, InitialShapeSize)
+        initialDeformedShape = deform(initialShape, InitialIteration, InitialVariance)
+
+
+        beginShape()
+        for (i = 0; i < initialDeformedShape.length; i++) {
+            vertex(initialDeformedShape[i][0], initialDeformedShape[i][1])
+        }
+        endShape()
+
+        deformedShape = initialDeformedShape
+        for (i = 0; i < floor(random(MinLayers, MaxLayers)); i++) {
+            deformedShape = deform(deformedShape, LayeredIteration, LayeredVariance)
+            beginShape()
+            for (i = 0; i < deformedShape.length; i++) {
+                vertex(deformedShape[i][0], deformedShape[i][1])
+            }
+            endShape()
+        }
+    }
+
 }
 
+
+function octagon(x_start, y_start, side) {
+    x = x_start
+    y = y_start
+    diagonal_leg = side / sqrt(2)
+
+    // create an array of points which draw out an octagon
+    oct = []
+    append(oct, [x, y])
+    x += side
+    append(oct, [x, y])
+    x += diagonal_leg
+    y += diagonal_leg
+    append(oct, [x, y])
+    y += side
+    append(oct, [x, y])
+    x -= diagonal_leg
+    y += diagonal_leg
+    append(oct, [x, y])
+    x -= side
+    append(oct, [x, y])
+    x -= diagonal_leg
+    y -= diagonal_leg
+    append(oct, [x, y])
+    y -= side
+    append(oct, [x, y])
+    x += diagonal_leg
+    y -= diagonal_leg
+    append(oct, [x, y])
+
+    return (oct)
+}
+
+function deform(shape, iterations, variance) {
+    midpoint = []
+    for (i = 0; i < iterations; i++) {
+        for (j = shape.length - 1; j > 0; j--) {
+            midpoint = [(shape[j][0] + shape[j - 1][0]) / 2, (shape[j][1] + shape[j - 1][1]) / 2]
+            midpoint[j, 0] -= random(-variance, variance)
+            midpoint[j, 1] -= random(-variance, variance)
+            shape.splice(j, 0, midpoint)
+        }
+    }
+    return shape
+}
 
 function generateInterpolatedColors(bP, cB) {
     //bP is the number of points between each color, while cB is the base colors, either a number for random colors, or an array for selected colors 
@@ -51,16 +152,24 @@ function generateInterpolatedColors(bP, cB) {
     // finally, after all of the colors are added, append the maxColor. This is added outside of the for loop because every max color becomes the min color
     // except for the final one since the loop is exited.
     append(lerpedColors, maxColor)
-
     // display the color palette in the canvas, then save as pallette.png if desired
-    for (let i = 0; i < lerpedColors.length; i++) {
-        noStroke();
-        fill(lerpedColors[i])
-        rect((i * windowWidth / lerpedColors.length), 0, 5, windowHeight)
-    }
+
+    // for (let i = 0; i < lerpedColors.length; i++) {
+    //     noStroke();
+    //     fill(lerpedColors[i])
+    //     rect((i * CanvasWidth / lerpedColors.length), 0, 5, CanvasHeight)
+    // }
     // save("pallette.png")
 
     // return all of the interpolated colors and the base colors used 
     return lerpedColors, colorBaseColors
 
+
+}
+
+function countDrawLoop() {
+    if (drawLoopCount % LoopsUntilColorChange == 0) {
+        generateInterpolatedColors(NumColorSteps, NumColors)
+    }
+    drawLoopCount++
 }
